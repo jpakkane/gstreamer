@@ -159,9 +159,6 @@ gstenum_c = custom_target('gstenum_c',
   input : gst_headers,
   command : [mkenums, '@OUTPUT@', '@INPUT@'])
 
-subdir('parse')
-subdir('printf')
-
 gst_c_args = ['-DHAVE_CONFIG_H',
   '-D_GNU_SOURCE',
   '-DGST_EXPORTS',
@@ -169,18 +166,19 @@ gst_c_args = ['-DHAVE_CONFIG_H',
   '-DGST_DISABLE_DEPRECATED',
 ]
 
+subdir('printf')
+subdir('parse')
+
 # Make it possible to build both static and shared versions
 # at the same time. By default use shared for unit tests etc.
 # This choice is arbitrary.
 if libtype != 'shared'
   libgst_static = static_library('gstreamer-1.0', gst_sources, gst_trace_sources,
-    gstenum_h, gstenum_c, grammar, parser, gst_registry,
+    gstenum_h, gstenum_c, gst_registry,
     c_args : [gst_c_args, '-DGST_PLUGIN_BUILD_STATIC'],
-    include_directories : [configinc,
-      # HACK, change include paths in .y and .l in final version.
-      include_directories('parse')],
+    include_directories : [configinc],
     install : true,
-    link_with : printf_lib_static,
+    link_with : [printf_lib_static, gstparse_static],
     link_args : system_link_args,
     dependencies : [gobject_dep, gmodule_dep, glib_dep, math_dep],
   )
@@ -189,14 +187,12 @@ endif
 
 if libtype != 'static'
   libgst_shared = shared_library('gstreamer-1.0', gst_sources, gst_trace_sources,
-    gstenum_h, gstenum_c, grammar, parser, gst_registry,
+    gstenum_h, gstenum_c, gst_registry,
     version : gst_version,
     soversion : soversion,
     c_args : gst_c_args,
-    include_directories : [configinc,
-      # HACK, change include paths in .y and .l in final version.
-      include_directories('parse')],
-    link_with : printf_lib_shared,
+    include_directories : [configinc],
+    link_with : [printf_lib_shared, gstparse_shared],
     link_args : system_link_args,
     install : true,
     dependencies : [gobject_dep, gmodule_dep, glib_dep, math_dep],
